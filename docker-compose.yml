@@ -19,6 +19,7 @@ services:
       - "5173:5173"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    stop_grace_period: 1s
     networks:
       - laravel
 
@@ -47,10 +48,10 @@ services:
       - "8025:8025"
     networks:
       - laravel
+    stop_grace_period: 1s
     profiles:
       - dev
 
 networks:
   laravel:
     driver: bridge
-
