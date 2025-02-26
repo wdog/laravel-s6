@@ -8,14 +8,14 @@ services:
     container_name: app
     environment:
       - APP_ENV=${APP_ENV}
-      - PUID=1000 # user nginx
-      - PGID=1000 # group www-data
+      - PUID=${PUID} # user nginx
+      - PGID=${PGID} # group www-data
     volumes:
       - ./src/.:/var/www/html
     depends_on:
       - db
     ports:
-      - "9090:443"
+      - "${APP_PORT:-443}:443"
       - "5173:5173"
     extra_hosts:
       - "host.docker.internal:host-gateway"
