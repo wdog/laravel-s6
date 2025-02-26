@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv sh
+
+
+if [ "$APP_ENV" = "local" ]; then
+
+cat <<EOL
+┌────────────────────┐
+  VITE BUILD DEVELOP
+└────────────────────┘
+EOL
+
+    cd /var/www/html
+    npm run dev
+
+fi

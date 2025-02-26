@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv bash
+
+
+cat <<EOL
+┌──────────┐
+  PHP-FPM
+└──────────┘
+EOL
+
+
+exec php-fpm -F

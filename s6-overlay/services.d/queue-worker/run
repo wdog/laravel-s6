@@ -1,0 +1,17 @@
+#!/usr/bin/with-contenv sh
+
+# Wait database
+sleep 5
+
+cat <<EOL
+┌───────────────┐
+  LARAVEL QUEUE
+└───────────────┘
+EOL
+
+export QUEUE_WORK_ATTEMPTS=3
+export QUEUE=default
+
+cd /var/www/html
+php artisan queue:work --daemon --sleep=3 --tries=${QUEUE_WORK_ATTEMPTS}
+

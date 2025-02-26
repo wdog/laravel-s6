@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+
+cat <<EOL
+┌────────┐
+  NGINX
+└────────┘
+EOL
+
+# permissions
+chown -R nginx:www-data /etc/nginx 
+chown -R nginx:www-data /var/www/html
+
+exec nginx -g 'daemon off;'

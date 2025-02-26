@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv sh
+
+sleep 5
+
+cat <<EOF
+┌──────────┐
+  SCHEDULE
+└──────────┘
+EOF
+
+cd /var/www/html
+php artisan schedule:work
