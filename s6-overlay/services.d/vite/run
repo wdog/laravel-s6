@@ -10,6 +10,6 @@ cat <<EOL
 EOL
 
     cd /var/www/html
-    npm run dev
+    exec s6-setuidgid nginx npm run dev
 
 fi

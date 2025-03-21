@@ -62,4 +62,3 @@ WORKDIR /var/www/html
 # Expose ports and start s6
 EXPOSE 80 443 5173
 ENTRYPOINT ["/init"]
-

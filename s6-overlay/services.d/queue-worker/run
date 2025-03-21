@@ -1,5 +1,6 @@
 #!/usr/bin/with-contenv sh
 
+
 # Wait database
 sleep 5
 
@@ -13,5 +14,5 @@ export QUEUE_WORK_ATTEMPTS=3
 export QUEUE=default
 
 cd /var/www/html
-php artisan queue:work --daemon --sleep=3 --tries=${QUEUE_WORK_ATTEMPTS}
+exec s6-setuidgid nginx php artisan queue:work --daemon --sleep=3 --tries=${QUEUE_WORK_ATTEMPTS}
 
