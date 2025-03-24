@@ -10,6 +10,7 @@ services:
       - APP_ENV=${APP_ENV}
       - PUID=${PUID} # user nginx
       - PGID=${PGID} # group www-data
+    restart: unless_stopped
     volumes:
       - ./src/.:/var/www/html
     depends_on:
@@ -26,7 +27,7 @@ services:
   db:
     image: mysql:8.4.3
     container_name: db
-    restart: always
+    restart: unless_stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
