@@ -243,8 +243,9 @@ extraComponents(){
     $run_in_app composer require tightenco/duster
     $run_in_app ./vendor/bin/duster fix --using pint
 
-    sed -i "s/->login()/->login()->renderHook('panels::body.end', fn (): string => Blade::render(\"\@vite('resources\/js\/app.js')\"))/" app/Providers/Filament/AdminPanelProvider.php
+    sed -i "s/->login()/->login()->renderHook('panels::body.end', fn(): string => \\\Illuminate\\\Support\\\Facades\\\Blade::render(\"\@vite('resources\/js\/app.js')\"))/" app/Providers/Filament/AdminPanelProvider.php
     sed -i "s/Amber/Lime/" app/Providers/Filament/AdminPanelProvider.php
+
 
     git add .
     git commit -a -m "starting point"
