@@ -30,6 +30,7 @@ main(){
     installShield
     createUser
     setupShield
+    extraComponents
     banner "Installazione completata!"
     # echo "Accesso all'applicazione: https://localhost"
     # echo "Utente di test creato:"
@@ -63,7 +64,7 @@ setupProject() {
     # Aggiornamento delle variabili di ambiente per il database
     sed -i "s/APP_NAME=Laravel/APP_NAME=$APP_NAME/" .env
     sed -i "s/APP_FAKER_LOCALE=.*/APP_FAKER_LOCALE=it_IT/" .env
-    sed -i "s/APP_URL=.*/APP_URK=https:\/\/localhost/" .env
+    sed -i "s/APP_URL=.*/APP_URL=https:\/\/localhost/" .env
     sed -i "s/APP_LOCALE=.*/APP_LOCALE=it/" .env
     sed -i "s/# DB_HOST=.*/DB_HOST=db/" .env
     sed -i "s/# DB_PORT=.*/DB_PORT=3306/" .env
@@ -238,7 +239,13 @@ banner() {
     echo ""
 }
 
-
+extraComponents(){
+    $run_in_app composer require tightenco/duster
+    $run_in_app ./vendor/bin/duster fix --using pint
+    git add .
+    git commit -a -m "starting point"
+    git status
+}
 
 # RUN
 main
