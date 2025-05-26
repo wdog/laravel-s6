@@ -11,7 +11,7 @@ composer="docker run --rm -it --user 1000:1000 -v .:/opt -v $HOME/.cache/compose
 run_in_app="docker-compose exec -u 1000:1000 app"
 
 
-echo -n "Enter Applicationname: "
+echo -n "Enter Application Name: "
 read APP_NAME
 
 # Variabili di configurazione
@@ -67,7 +67,7 @@ setupProject() {
     cp .env.example .env
 
     # Aggiornamento delle variabili di ambiente per il database
-    sed -i "s/APP_NAME=Laravel/APP_NAME=$APP_NAME/" .env
+    sed -i "s/APP_NAME=Laravel/APP_NAME=\"$APP_NAME\"/" .env
     sed -i "s/APP_FAKER_LOCALE=.*/APP_FAKER_LOCALE=it_IT/" .env
     sed -i "s/APP_URL=.*/APP_URL=https:\/\/localhost/" .env
     sed -i "s/APP_LOCALE=.*/APP_LOCALE=it/" .env
@@ -168,10 +168,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: [
-                ...refreshPaths,
-                'app/Filament/**',
-            ],
+            refresh: [...refreshPaths, "app/Livewire/**", "app/Filament/**", "resources/views/**"],
         }),
         tailwindcss(),
     ],
@@ -255,6 +252,8 @@ extraComponents(){
     git add .
     git commit -a -m "starting point"
     git status
+    docker-compose down
+    docker-compose up -d
 }
 
 # RUN
