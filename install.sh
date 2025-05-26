@@ -3,18 +3,23 @@
 set -e
 
 #sudo rm -rf ~/.cache/composer
+
 mkdir -p ~/.cache/composer
 #chmod 777 ~/.cache/composer -R
 
 composer="docker run --rm -it --user 1000:1000 -v .:/opt -v $HOME/.cache/composer:/tmp/cache -w /opt composer:latest"
 run_in_app="docker-compose exec -u 1000:1000 app"
 
+
+echo -n "Enter Applicationname: "
+read APP_NAME
+
 # Variabili di configurazione
 PROJECT_DIR="src"
 DB_NAME="laravel"
 DB_USER="laravel"
 DB_PASS="laravel"
-APP_NAME="MyLaravelApp"
+#APP_NAME="MyLaravelApp"
 
 
 main(){
