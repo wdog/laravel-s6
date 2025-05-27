@@ -1,3 +1,5 @@
 mysql/
 src/
 .env
+restore.sh
+db.sql
