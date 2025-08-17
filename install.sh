@@ -44,7 +44,6 @@ main(){
 }
 
 
-
 createDir() {
     banner "Clean Existing Directories"
     sudo rm -rf mysql
@@ -89,7 +88,7 @@ keyGenerate() {
 
 installFilament() {
     banner "Installazione di Filament..."
-    $composer require filament/filament --ignore-platform-reqs -W
+    $composer require filament/filament:"^3" --ignore-platform-reqs -W
 }
 
 installShield() {
@@ -190,7 +189,7 @@ setupFilament(){
     sed -i "s/->path('admin')/->path('\/')/" app/Providers/Filament/AdminPanelProvider.php
     echo "<?php" > routes/web.php
 
-    cat << EOL > app/Models/User.php
+    cat <<EOL > app/Models/User.php
 <?php
 
 namespace App\Models;
@@ -242,11 +241,33 @@ banner() {
 }
 
 extraComponents(){
+    # DUSTER + FIX
     $run_in_app composer require tightenco/duster
     $run_in_app ./vendor/bin/duster fix --using pint
 
     sed -i "s/->login()/->login()->renderHook('panels::body.end', fn(): string => \\\Illuminate\\\Support\\\Facades\\\Blade::render(\"\@vite('resources\/js\/app.js')\"))/" app/Providers/Filament/AdminPanelProvider.php
     sed -i "s/Amber/Lime/" app/Providers/Filament/AdminPanelProvider.php
+
+    # BROADCASTING
+    docker-compose exec app /usr/local/bin/php artisan install:broadcasting --reverb -n
+
+    BROADCAST_CONNECTION=reverb
+    REVERB_HOST=127.0.0.1
+    REVERB_PORT=8080
+    REVERB_SCHEME=http
+    VITE_REVERB_APP_KEY="\$\{REVERB_APP_KEY\}"
+    VITE_REVERB_HOST=localhost
+    VITE_REVERB_PORT=443
+    VITE_REVERB_SCHEME=https
+    update_env_var BROADCAST_CONNECTION $BROADCAST_CONNECTION
+    update_env_var REVERB_HOST $REVERB_HOST
+    update_env_var REVERB_PORT $REVERB_PORT
+    update_env_var REVERB_SCHEME $REVERB_SCHEME
+    update_env_var VITE_REVERB_APP_KEY $VITE_REVERB_APP_KEY
+    update_env_var VITE_REVERB_HOST $VITE_REVERB_HOST
+    update_env_var VITE_REVERB_PORT $VITE_REVERB_PORT
+    update_env_var VITE_REVERB_SCHEME $VITE_REVERB_SCHEME
+    sed -i "11i\channels: __DIR__ . \'/../routes/channels.php\'," bootstrap/app.php
 
 
     git add .
@@ -254,6 +275,17 @@ extraComponents(){
     git status
     docker-compose down
     docker-compose up -d
+}
+
+
+update_env_var() {
+    local var_name="$1"
+    local var_value="$2"
+    local env_file="${3:-.env}"  # Default to .env if no file specified
+
+    # Use sed to find commented or uncommented variable and update it
+    sed -i "s/^# *${var_name}=.*/${var_name}=${var_value}/" "$env_file"
+    sed -i "s/^${var_name}=.*/${var_name}=${var_value}/" "$env_file"
 }
 
 # RUN

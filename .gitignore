@@ -1,4 +1,5 @@
 mysql/
+redis/
 src/
 .env
 restore.sh

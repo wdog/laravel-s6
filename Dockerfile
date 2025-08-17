@@ -16,9 +16,6 @@ RUN apk add --no-cache \
     rm -rf /var/cache/apk/* && \
     rm -rf /usr/src/php
 
-
-
-
 # -----------
 # SQL SERVER
 # -----------
@@ -35,7 +32,6 @@ RUN cd /tmp && \
     docker-php-ext-enable sqlsrv pdo_sqlsrv && \
     apk del .phpize-deps && \
     rm /tmp/*.apk
-
 
 
 # create SSL certificate for nginx

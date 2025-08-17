@@ -1,6 +1,5 @@
 #!/usr/bin/with-contenv sh
 
-
 # Wait database
 sleep 5
 
@@ -10,9 +9,11 @@ cat <<EOL
 └───────────────┘
 EOL
 
-export QUEUE_WORK_ATTEMPTS=3
-export QUEUE=default
+export QUEUE_WORK_ATTEMPTS=1
 
 cd /var/www/html
-exec s6-setuidgid nginx php artisan queue:work --daemon --sleep=3 --tries=${QUEUE_WORK_ATTEMPTS}
 
+for i in $(seq 1 5); do
+    exec s6-setuidgid nginx php artisan queue:work --queue=high,default --tries=${QUEUE_WORK_ATTEMPTS} &
+done
+wait
