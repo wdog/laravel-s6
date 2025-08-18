@@ -65,6 +65,10 @@ setupProject() {
     banner "Configurazione del file .env..."
     cp .env.example .env
 
+    # ! TO TEST
+    # APP_NAME="$APP_NAME"
+    # update_env_var APP_NAME $APP_NAME
+
     # Aggiornamento delle variabili di ambiente per il database
     sed -i "s/APP_NAME=Laravel/APP_NAME=\"$APP_NAME\"/" .env
     sed -i "s/APP_FAKER_LOCALE=.*/APP_FAKER_LOCALE=it_IT/" .env
@@ -88,12 +92,12 @@ keyGenerate() {
 
 installFilament() {
     banner "Installazione di Filament..."
-    $composer require filament/filament:"^3" --ignore-platform-reqs -W
+    $composer require filament/filament --ignore-platform-reqs -W
 }
 
 installShield() {
     banner "Installazione di Filament Shield..."
-    $composer require bezhansalleh/filament-shield --ignore-platform-reqs -W
+    $composer require bezhansalleh/filament-shield:"^4.x-dev" --ignore-platform-reqs -W
 }
 
 createUser() {
@@ -167,7 +171,12 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: [...refreshPaths, "app/Livewire/**", "app/Filament/**", "resources/views/**"],
+            refresh: [...refreshPaths,
+                "app/Livewire/**",
+                "app/Filament/**",
+                "app/Providers/Filament/**",
+                "resources/views/**"
+            ],
         }),
         tailwindcss(),
     ],
@@ -181,6 +190,11 @@ export default defineConfig({
 });
 EOL
 
+    cat <<EOL > resources/js/app.js
+import './bootstrap';
+
+import '../css/app.css';
+EOL
 }
 
 setupFilament(){
@@ -228,28 +242,15 @@ setupShield() {
 }
 
 
-run_migrations(){
-    banner "Esecuzione delle migrations e seeder..."
-    $run_in_app php artisan migrate --step
-}
-
-banner() {
-    echo "--------------------------------------------------------------"
-    echo ">>>>>" $1
-    echo "--------------------------------------------------------------"
-    echo ""
-}
 
 extraComponents(){
-    # DUSTER + FIX
-    $run_in_app composer require tightenco/duster
-    $run_in_app ./vendor/bin/duster fix --using pint
 
     sed -i "s/->login()/->login()->renderHook('panels::body.end', fn(): string => \\\Illuminate\\\Support\\\Facades\\\Blade::render(\"\@vite('resources\/js\/app.js')\"))/" app/Providers/Filament/AdminPanelProvider.php
     sed -i "s/Amber/Lime/" app/Providers/Filament/AdminPanelProvider.php
 
     # BROADCASTING
-    docker-compose exec app /usr/local/bin/php artisan install:broadcasting --reverb -n
+    banner "Installazione di REVERB..."
+    $run_in_app php artisan install:broadcasting --reverb -n
 
     BROADCAST_CONNECTION=reverb
     REVERB_HOST=127.0.0.1
@@ -259,6 +260,7 @@ extraComponents(){
     VITE_REVERB_HOST=localhost
     VITE_REVERB_PORT=443
     VITE_REVERB_SCHEME=https
+
     update_env_var BROADCAST_CONNECTION $BROADCAST_CONNECTION
     update_env_var REVERB_HOST $REVERB_HOST
     update_env_var REVERB_PORT $REVERB_PORT
@@ -267,14 +269,29 @@ extraComponents(){
     update_env_var VITE_REVERB_HOST $VITE_REVERB_HOST
     update_env_var VITE_REVERB_PORT $VITE_REVERB_PORT
     update_env_var VITE_REVERB_SCHEME $VITE_REVERB_SCHEME
-    sed -i "11i\channels: __DIR__ . \'/../routes/channels.php\'," bootstrap/app.php
 
+    # DUSTER + FIX
+    banner "Installazione di Duster..."
+    $composer require tightenco/duster --ignore-platform-reqs --dev
+    banner "Run FIX..."
+    $run_in_app ./vendor/bin/duster fix --using pint
+
+    $run_in_app php artisan optimize:clear
+    $run_in_app php artisan filament:optimize-clear
 
     git add .
     git commit -a -m "starting point"
     git status
     docker-compose down
-    docker-compose up -d
+    docker-compose up -d --force-recreate
+
+#    $run_in_app php artisan queue:flush
+#    $run_in_app php artisan queue:clear
+#    $run_in_app php artisan queue:restart
+#    $run_in_app php artisan reverb:restart
+     $run_in_app php artisan filament:optimize-clear
+     $run_in_app php artisan optimize:clear
+
 }
 
 
@@ -286,6 +303,18 @@ update_env_var() {
     # Use sed to find commented or uncommented variable and update it
     sed -i "s/^# *${var_name}=.*/${var_name}=${var_value}/" "$env_file"
     sed -i "s/^${var_name}=.*/${var_name}=${var_value}/" "$env_file"
+}
+
+run_migrations(){
+    banner "Esecuzione delle migrations e seeder..."
+    $run_in_app php artisan migrate --step
+}
+
+banner() {
+    echo "--------------------------------------------------------------"
+    echo ">>>>>" $1
+    echo "--------------------------------------------------------------"
+    echo ""
 }
 
 # RUN
