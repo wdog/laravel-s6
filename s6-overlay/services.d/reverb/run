@@ -7,7 +7,6 @@ cat <<EOL
 └────────────────────┘
 EOL
 
-
 cd /var/www/html
 exec s6-setuidgid nginx php artisan reverb:start --debug
 

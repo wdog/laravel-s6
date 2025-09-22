@@ -1,5 +1,6 @@
 #!/usr/bin/with-contenv sh
 
+
 # Wait database
 sleep 5
 
@@ -12,6 +13,8 @@ EOL
 export QUEUE_WORK_ATTEMPTS=1
 
 cd /var/www/html
+# exec s6-setuidgid nginx php artisan queue:work --queue=high,default --tries=${QUEUE_WORK_ATTEMPTS}
+
 
 for i in $(seq 1 5); do
     exec s6-setuidgid nginx php artisan queue:work --queue=high,default --tries=${QUEUE_WORK_ATTEMPTS} &
