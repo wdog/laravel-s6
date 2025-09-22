@@ -5,6 +5,7 @@ FROM php:8.3.16-fpm-alpine
 RUN apk add --no-cache \
     s6-overlay bash \
     nginx \
+    qpdf \
     nodejs npm \
     curl zip unzip shadow openssl \
     oniguruma-dev gpg sqlite-dev \
