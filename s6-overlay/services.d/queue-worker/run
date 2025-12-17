@@ -10,7 +10,7 @@ cat <<EOL
 └───────────────┘
 EOL
 
-export QUEUE_WORK_ATTEMPTS=1
+export QUEUE_WORK_ATTEMPTS=3
 
 cd /var/www/html
 # exec s6-setuidgid nginx php artisan queue:work --queue=high,default --tries=${QUEUE_WORK_ATTEMPTS}

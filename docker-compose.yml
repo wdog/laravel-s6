@@ -67,6 +67,8 @@ services:
     networks:
       - laravel
     stop_grace_period: 1s
+    environment:
+      MP_MAX_MESSAGES: 0
     profiles:
       - dev
 
