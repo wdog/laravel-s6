@@ -65,6 +65,12 @@ setupProject() {
     banner "Configurazione del file .env..."
     cp .env.example .env
 
+    if [ -f .env ]; then
+        head .env
+    else
+        banner "Error .env not created"
+        exit 1;
+    fi
     # ! TO TEST
     # APP_NAME="$APP_NAME"
     # update_env_var APP_NAME $APP_NAME
@@ -97,7 +103,7 @@ installFilament() {
 
 installShield() {
     banner "Installazione di Filament Shield..."
-    $composer require bezhansalleh/filament-shield:"^4.x-dev" --ignore-platform-reqs -W
+    $composer require bezhansalleh/filament-shield --ignore-platform-reqs -W
 }
 
 createUser() {
@@ -234,7 +240,7 @@ setupShield() {
     banner "setup shield..."
     $run_in_app php artisan vendor:publish --tag=filament-shield-config
     $run_in_app php artisan vendor:publish --tag=filament-shield-translations
-    $run_in_app php artisan shield:setup --fresh --minimal
+    $run_in_app php artisan shield:setup --fresh
     $run_in_app php artisan shield:install admin -n
     $run_in_app php artisan shield:generate --panel=admin --all --ignore-existing-policies
     $run_in_app php artisan shield:super-admin
@@ -283,14 +289,15 @@ extraComponents(){
     git commit -a -m "starting point"
     git status
     docker-compose down
+    banner ">>>> Starting Docker Containers"
     docker-compose up -d --force-recreate
-
+    sleep 10
 #    $run_in_app php artisan queue:flush
 #    $run_in_app php artisan queue:clear
 #    $run_in_app php artisan queue:restart
 #    $run_in_app php artisan reverb:restart
-     $run_in_app php artisan filament:optimize-clear
-     $run_in_app php artisan optimize:clear
+#     $run_in_app php artisan filament:optimize-clear
+#     $run_in_app php artisan optimize:clear
 
 }
 
