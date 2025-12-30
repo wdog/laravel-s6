@@ -87,6 +87,11 @@ setupProject() {
     sed -i "s/# DB_DATABASE=.*/DB_DATABASE=$DB_NAME/" .env
     sed -i "s/# DB_USERNAME=.*/DB_USERNAME=$DB_USER/" .env
     sed -i "s/# DB_PASSWORD=.*/DB_PASSWORD=$DB_PASS/" .env
+
+    # Add VITE_HMR_HOST for Vite dev server
+    echo "" >> .env
+    echo "# Vite HMR - Required for Hot Module Replacement in development" >> .env
+    echo "VITE_HMR_HOST=localhost" >> .env
 }
 
 keyGenerate() {
@@ -168,31 +173,46 @@ install_npm(){
 
 vite(){
 
-    cat <<EOL >vite.config.js
-import { defineConfig } from 'vite';
+    cat <<'EOL' >vite.config.js
+import { defineConfig, loadEnv } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import laravel, { refreshPaths } from 'laravel-vite-plugin'
 
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: [...refreshPaths,
-                "app/Livewire/**",
-                "app/Filament/**",
-                "app/Providers/Filament/**",
-                "resources/views/**"
-            ],
-        }),
-        tailwindcss(),
-    ],
-    server: {
-        host: "0.0.0.0",
-        hmr: {
-            host: "localhost",
-            https: true
-        }
-    },
+export default defineConfig(({ mode }) => {
+    // Load env file based on mode to get VITE_HMR_HOST
+    const env = loadEnv(mode, process.cwd(), '');
+    const hmrHost = env.VITE_HMR_HOST || 'localhost';
+
+    return {
+        plugins: [
+            laravel({
+                input: ['resources/css/app.css', 'resources/js/app.js'],
+                refresh: [...refreshPaths,
+                    "app/Livewire/**",
+                    "app/Filament/**",
+                    "app/Providers/Filament/**",
+                    "resources/views/**"
+                ],
+                // Prevent auto-detection of TLS
+                valetTls: false,
+                detectTls: false,
+            }),
+            tailwindcss(),
+        ],
+        server: {
+            host: "0.0.0.0",
+            port: 5173,
+            strictPort: true,
+            hmr: {
+                protocol: 'ws',        // Use 'ws' (not 'wss') for development
+                clientPort: 5173,
+                host: hmrHost,         // Loaded from VITE_HMR_HOST
+            },
+            watch: {
+                usePolling: true,
+            }
+        },
+    };
 });
 EOL
 
