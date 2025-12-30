@@ -7,6 +7,7 @@ services:
     container_name: app
     environment:
       - APP_ENV=${APP_ENV}
+      - APP_HOST=${APP_HOST:-localhost}
       - PUID=${PUID} # user nginx
       - PGID=${PGID} # group www-data
     restart: unless-stopped
@@ -59,7 +60,7 @@ services:
   #     retries: 3
 
   mailpit:
-    image: axllent/mailpit
+    image: axllent/mailpit:latest
     container_name: mailpit
     ports:
       - "1025:1025"
@@ -70,7 +71,7 @@ services:
     environment:
       MP_MAX_MESSAGES: 0
     profiles:
-      - dev
+      - local  # Usa 'local' invece di 'dev' per matchare APP_ENV
 
 networks:
   laravel:

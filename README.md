@@ -1,4 +1,33 @@
-# Laravel S6 Docker
+# DinnerTable - Laravel Application
+
+Applicazione web per la gestione e coordinamento di cene di gruppo, basata su Laravel 12 + Filament v4.
+
+## Quick Start
+
+### Configurazione Iniziale
+
+1. **Crea i file di ambiente:**
+```bash
+cp src/.env.example src/.env.local
+cp src/.env.example src/.env.production
+```
+
+2. **Configura `src/.env.local` per development** (vedi [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md))
+
+3. **Avvia l'ambiente:**
+```bash
+# Development (localhost)
+./switch-env.sh local
+
+# Production (IP 192.168.88.40)
+./switch-env.sh production
+```
+
+**Per guida completa:** Leggi [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)
+
+---
+
+# Laravel S6 Docker (Base Template)
 
 This repository provides a fully automated environment for installing and running a Laravel application from scratch using Docker, Docker Compose, and the S6 process supervisor.
 
