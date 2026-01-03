@@ -6,6 +6,7 @@
 - [Switch tra Ambienti](#switch-tra-ambienti)
 - [Development (Local)](#development-local)
 - [Production](#production)
+- [Laravel Reverb Setup](#laravel-reverb-setup)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -328,7 +329,10 @@ docker-compose exec app php artisan filament:optimize
 
 # 7. Riavvia con profilo production
 docker-compose down
+# up
 COMPOSE_PROFILES=production docker-compose up -d --force-recreate
+# down in case you need
+COMPOSE_PROFILES=production docker-compose down
 ```
 
 ### Cosa cambia in Production
@@ -433,6 +437,227 @@ docker-compose exec app tail -f storage/logs/laravel.log
 # Docker compose logs (tutti i servizi s6)
 docker-compose logs -f app
 ```
+
+---
+
+## Laravel Reverb Setup
+
+Laravel Reverb è il server WebSocket ufficiale di Laravel per broadcasting real-time. Questo progetto integra Reverb per funzionalità come notifiche in tempo reale e aggiornamenti live del calendario.
+
+### Cos'è Laravel Reverb?
+
+**Reverb** è un server WebSocket nativo per Laravel che sostituisce servizi esterni come Pusher o Socket.io. Permette di implementare funzionalità real-time senza dipendenze esterne.
+
+**Vantaggi:**
+- ✅ Nessun servizio esterno necessario
+- ✅ Configurazione semplice
+- ✅ Performance elevate
+- ✅ Integrato con Laravel Broadcasting
+
+### Installazione e Configurazione
+
+#### 1. Installazione (già fatto in `install.sh`)
+
+```bash
+# Installa Reverb
+docker-compose exec app composer require laravel/reverb
+
+# Pubblica configurazione
+docker-compose exec app php artisan reverb:install
+
+# Aggiorna .env con chiavi Reverb
+docker-compose exec app php artisan reverb:install --update-env
+```
+
+#### 2. Configurazione `.env`
+
+**Reverb Server (interno al container):**
+```env
+REVERB_APP_ID=your-app-id
+REVERB_APP_KEY=your-app-key
+REVERB_APP_SECRET=your-app-secret
+REVERB_HOST=127.0.0.1        # Interno al container
+REVERB_PORT=8080             # Porta interna
+REVERB_SCHEME=http           # HTTP internamente
+```
+
+**Reverb Client (frontend JavaScript):**
+
+**Development (localhost):**
+```env
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST=localhost
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
+```
+
+**Production (dominio/IP):**
+```env
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST=192.168.88.40    # o yourdomain.com
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
+```
+
+**IMPORTANTE:**
+- `REVERB_HOST=127.0.0.1` è per il server interno
+- `VITE_REVERB_HOST` deve matchare il dominio che l'utente usa nel browser
+- Porta 443 perché nginx fa da proxy HTTPS
+
+#### 3. Configurazione Nginx (Proxy WebSocket)
+
+Il file nginx include il proxy per `/app` che inoltra a Reverb:
+
+```nginx
+# /etc/nginx/conf.d/default.conf
+server {
+    listen 443 ssl http2;
+    server_name _;
+
+    # Reverb WebSocket proxy
+    location /app {
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header Scheme $scheme;
+        proxy_set_header SERVER_PORT $server_port;
+        proxy_set_header REMOTE_ADDR $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+
+        proxy_pass http://127.0.0.1:8080;
+    }
+}
+```
+
+**Path:** `/app` è il path standard di Reverb per WebSocket.
+
+#### 4. Servizio S6-Overlay per Reverb
+
+Reverb gira come servizio gestito da s6-overlay all'interno del container.
+
+**Crea la struttura directory:**
+```bash
+cd s6-overlay/services.d
+mkdir -p reverb/dependencies.d
+cd reverb
+touch dependencies.d/nginx    # Reverb parte dopo nginx
+touch run
+chmod +x run
+```
+
+**File `s6-overlay/services.d/reverb/run`:**
+```bash
+#!/usr/bin/with-contenv sh
+
+cat <<EOL
+┌────────────────────┐
+       REVERB
+└────────────────────┘
+EOL
+
+cd /var/www/html
+exec s6-setuidgid nginx php artisan reverb:start --debug
+```
+
+#### 5. Broadcasting Configuration
+
+**Abilita channels in `bootstrap/app.php`:**
+```php
+<?php
+
+use Illuminate\Foundation\Application;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',  // Aggiungi questa riga
+        health: '/up',
+    )
+    // ...
+```
+
+**File `routes/channels.php` (esempio):**
+```php
+<?php
+
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+```
+
+#### 6. Test WebSocket
+
+**JavaScript debug (in `resources/js/echo.js`):**
+```javascript
+// Ascolta un canale di test
+window.Echo.channel("messages")
+    .listen('MessageSent', (event) => {
+        console.log('Messaggio ricevuto:', event);
+    });
+```
+
+### Verifica Funzionamento
+
+**1. Verifica che Reverb sia attivo:**
+```bash
+# Controlla processo reverb
+docker-compose exec app ps aux | grep reverb
+
+# Deve mostrare: php artisan reverb:start --debug
+```
+
+**2. Test connessione WebSocket:**
+```bash
+# Log Reverb in tempo reale
+docker-compose logs -f app | grep REVERB
+
+# Apri browser console (F12) e controlla:
+# WebSocket connection to 'wss://localhost/app/...' opened
+```
+
+### Architettura Reverb
+
+**Flow del WebSocket:**
+```
+Browser (wss://localhost/app)
+    ↓ HTTPS/WSS
+Nginx (443) - proxy WebSocket
+    ↓ HTTP
+Reverb Server (127.0.0.1:8080)
+    ↓
+Laravel App (broadcasting events)
+```
+
+**Flow di un evento:**
+1. Laravel triggera `broadcast(new MyEvent())`
+2. Reverb riceve l'evento
+3. Reverb invia via WebSocket ai client connessi
+4. Laravel Echo (frontend) riceve e processa
+
+### Differenze Local vs Production
+
+**Local:**
+```env
+VITE_REVERB_HOST=localhost
+VITE_REVERB_SCHEME=https
+```
+- Client connette a `wss://localhost/app`
+- Nginx proxy a `http://127.0.0.1:8080`
+
+**Production:**
+```env
+VITE_REVERB_HOST=192.168.88.40  # o yourdomain.com
+VITE_REVERB_SCHEME=https
+```
+- Client connette a `wss://192.168.88.40/app`
+- Nginx proxy a `http://127.0.0.1:8080`
+
+**IMPORTANTE:** `VITE_REVERB_HOST` deve sempre matchare il dominio/IP usato dall'utente finale.
 
 ---
 
