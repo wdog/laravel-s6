@@ -5,3 +5,5 @@ src/
 restore.sh
 *.sql
 .vscode/
+mysql.local/
+mysql.staging/
